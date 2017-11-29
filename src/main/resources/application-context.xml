@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+     xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/data/jpa
+        http://www.springframework.org/schema/data/jpa/spring-jpa.xsd        
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+        
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="${db.connection.url}"/>
+        <property name="username" value="${db.connection.username}"/>
+        <property name="password" value="${db.connection.password}"/>
+    </bean>
+
+    <!--
+        Specifies the default settings that are compatible with Hibernate.
+    -->
+    <bean id="hibernateJpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+          <property name="databasePlatform" value="org.hibernate.dialect.MySQL5Dialect"></property>
+          <property name="showSql" value="true"></property>
+    </bean>
+
+    <!-- Creates the bean that creates the JPA entity manager factory. -->
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="packagesToScan" value="bugtracking.app.entity"/>        
+        <property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter"/>
+        <property name="jpaDialect">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect"/>
+        </property>
+        <property name="jpaProperties">
+            <props>
+                <!--
+                    Configures the used database dialect. This allows Hibernate to create SQL
+                    that is optimized for the used database.
+                -->
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+
+                <!--
+                    If the value of this property is true, Hibernate writes all SQL
+                    statements to the console.
+                -->
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+
+            </props>
+        </property>
+    </bean>
+
+    <!--
+        Creates the transaction manager bean that integrates the used JPA provider with the
+        Spring transaction mechanism.
+    -->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+	<jpa:repositories base-package="bugtracking.app.repository" />
+        
+    <context:annotation-config/>
+    <context:component-scan base-package="bugtracking.app.*" />
+    
+    <mvc:resources mapping="/resources/**/*" location="/resources/" />
+    <mvc:annotation-driven/>
+
+    <!-- bean id="transactionManager"
+        class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean-->
+
+
+    <context:property-placeholder file-encoding="utf-8" location="classpath:app.properties"/>
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/jsp/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="smtp.gmail.com" />
+        <property name="port" value="587" />
+        <property name="username" value="username" />
+        <property name="password" value="password" />
+
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.auth">true</prop>
+                <prop key="mail.smtp.starttls.enable">true</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!--<bean id="mailService" class="ru.hse.esadykov.utils.MailService">-->
+        <!--<property name="mailSender" ref="mailSender" />-->
+        <!--<property name="taskExecutor" ref="taskExecutor" />-->
+    <!--</bean>-->
+</beans>
